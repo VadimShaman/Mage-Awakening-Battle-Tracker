@@ -36,6 +36,7 @@
             margin-bottom: 8px;
             cursor: pointer;
             transition: all 0.2s;
+            position: relative;
         }
 
         .combatant-card:hover {
@@ -60,6 +61,24 @@
         .combatant-card .meta {
             color: var(--text-dim);
             font-size: 0.8em;
+        }
+
+        .combatant-card .edit-char-btn {
+            position: absolute;
+            top: 6px;
+            right: 6px;
+            background: transparent;
+            border: none;
+            color: var(--text-dim);
+            font-size: 1em;
+            cursor: pointer;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        .combatant-card .edit-char-btn:hover {
+            background: rgba(106, 122, 255, 0.2);
+            color: var(--accent-glow);
         }
 
         .log-viewport {
@@ -93,10 +112,6 @@
 
         .log-entry.magic {
             color: var(--accent-purple);
-        }
-
-        .log-entry.success {
-            color: var(--success);
         }
 
         .dice-roll {
@@ -161,6 +176,11 @@
                         <button class="tab-btn" id="add-enemy-btn" style="padding:4px 10px;">👹 Враг</button>
                         <button class="tab-btn" id="add-npc-btn" style="padding:4px 10px;">📋 NPC</button>
                     </div>
+                    <div style="margin-bottom:10px;">
+                        <button class="btn-primary" id="create-custom-char-btn" style="width:100%; padding:8px;">
+                            ➕ Создать персонажа
+                        </button>
+                    </div>
                     <div id="combatants-list" style="max-height:400px; overflow-y:auto;">
                         <div class="empty-state">Нет участников</div>
                     </div>
@@ -200,6 +220,7 @@
                     </div>
                 </div>
 
+                <!-- АТАКА -->
                 <div class="panel">
                     <h3>🎯 Калькулятор атаки</h3>
                     <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:10px;">
@@ -216,21 +237,36 @@
                         <input type="text" id="weapon-name-input" value="Кулак" placeholder="Оружие"
                             style="flex:2; min-width:140px;">
                         <input type="number" id="weapon-bonus-input" value="0" placeholder="Бонус кубов"
-                            style="flex:1; min-width:80px;" title="Бонус от оружия (напр. нож +1)">
+                            style="flex:1; min-width:80px;">
                     </div>
 
-                    <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:10px;">
+                    <div class="damage-type-block">
+                        <div class="damage-type-label">Тип урона:</div>
+                        <div class="damage-type-options">
+                            <label class="damage-option damage-bashing selected">
+                                <input type="radio" name="damage-type" value="bashing" checked>
+                                <span class="damage-icon">💥</span>
+                                <span class="damage-name">Тупой</span>
+                                <span class="damage-mark">/</span>
+                            </label>
+                            <label class="damage-option damage-lethal">
+                                <input type="radio" name="damage-type" value="lethal">
+                                <span class="damage-icon">🩸</span>
+                                <span class="damage-name">Летальный</span>
+                                <span class="damage-mark">X</span>
+                            </label>
+                            <label class="damage-option damage-aggravated">
+                                <input type="radio" name="damage-type" value="aggravated">
+                                <span class="damage-icon">☠️</span>
+                                <span class="damage-name">Особый</span>
+                                <span class="damage-mark">*</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div style="display:flex; gap:10px; flex-wrap:wrap; margin:10px 0;">
                         <label style="color:var(--text-dim); font-size:0.9em;">
-                            <input type="checkbox" id="lethal-check"> Летальный урон
-                        </label>
-                        <label style="color:var(--text-dim); font-size:0.9em;">
-                            <input type="checkbox" id="aiming-check"> Прицеливание (+1)
-                        </label>
-                        <label style="color:var(--text-dim); font-size:0.9em;">
-                            <input type="checkbox" id="allout-check"> Безрассудная атака (+2)
-                        </label>
-                        <label style="color:var(--text-dim); font-size:0.9em;">
-                            <input type="checkbox" id="willpower-check"> Сила Воли (+3)
+                            <input type="checkbox" id="willpower-check"> 💪 Сила Воли (+3)
                         </label>
                     </div>
 
@@ -239,11 +275,18 @@
                     <div id="attack-result" style="margin-top:12px; display:none;"></div>
                 </div>
 
+                <!-- МАГИЯ -->
+                <div class="panel">
+                    <h3>🔮 Магия</h3>
+                    <button class="btn-primary" id="cast-spell-btn" style="width:100%; background:#6a3aaa;">
+                        ✨ Сотворить заклинание
+                    </button>
+                </div>
+
                 <div class="panel">
                     <h3>🎲 Кубы</h3>
                     <div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
                         <button class="tab-btn dice-insert-btn" data-dice="d10">d10</button>
-                        <button class="tab-btn dice-insert-btn" data-dice="d5">d5</button>
                         <span style="color:var(--text-dim); margin:0 4px;">или</span>
                         <input type="text" id="dice-custom-input" value="5d10" placeholder="5d10" style="width:100px;">
                         <button class="tab-btn" id="dice-custom-btn">🎲 Бросить</button>
@@ -262,22 +305,34 @@
 
                 <div class="panel">
                     <h3>📋 Порядок инициативы</h3>
+                    <button class="btn-primary" id="roll-init-btn" style="width:100%; margin-bottom:10px;">
+                        🎲 Рассчитать инициативу
+                    </button>
+                    <button class="tab-btn" id="manual-init-btn" style="width:100%; margin-bottom:10px;">
+                        ✏️ Ввести вручную
+                    </button>
                     <div id="init-order-display" style="max-height:300px; overflow-y:auto;">
                         <div class="empty-state">Нет инициативы</div>
                     </div>
                 </div>
 
                 <div class="panel">
-                    <h3>🛡️ Реакции</h3>
+                    <h3>🛡️ Защита</h3>
                     <p style="font-size:0.85em; color:var(--text-dim);">
-                        У каждого — 1 Реакция за ход.<br>
-                        <strong style="color:var(--success);">Уклонение</strong> — Ловкость + Атлетика<br>
-                        <strong style="color:var(--accent-purple);">Парирование</strong> — Сила + Драка
+                        <strong style="color:var(--accent-glow);">Защита</strong> = Мин(Лов, Сообр) + Атлетика<br>
+                        <strong style="color:var(--accent-cyan);">Уклонение</strong> — удвоить Защиту и бросить как пул
+                        кубов.
                     </p>
                 </div>
             </div>
         </div>
     </div>
+
+    <!-- Модальные окна -->
+    <div id="character-editor-modal"></div>
+    <div id="spell-modal"></div>
+    <div id="dodge-modal"></div>
+    <div id="manual-init-modal"></div>
 
     <script type="module" src="js/battle/battle-init.js"></script>
 </body>

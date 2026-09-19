@@ -1,9 +1,4 @@
 /* css/style.css */
-/* ============================================================
-   MAGE: THE AWAKENING — ОБЩИЕ СТИЛИ
-   Тёмная мистическая тема
-   ============================================================ */
-
 :root {
     --bg-dark: #0d0d12;
     --bg-card: #16161f;
@@ -45,9 +40,6 @@ body {
     margin: 0 auto;
 }
 
-/* ============================================================
-   ЗАГОЛОВКИ
-   ============================================================ */
 h1 {
     color: var(--accent-glow);
     font-size: 1.8em;
@@ -76,9 +68,7 @@ h3 {
     margin-bottom: 24px;
 }
 
-/* ============================================================
-   ВКЛАДКИ
-   ============================================================ */
+/* ВКЛАДКИ */
 .tabs-container {
     display: flex;
     gap: 4px;
@@ -136,9 +126,7 @@ h3 {
     }
 }
 
-/* ============================================================
-   КНОПКИ
-   ============================================================ */
+/* КНОПКИ */
 .btn-primary {
     background: var(--primary-blue);
     color: #fff;
@@ -176,9 +164,7 @@ h3 {
     color: #fff;
 }
 
-/* ============================================================
-   ИНПУТЫ
-   ============================================================ */
+/* ИНПУТЫ */
 input[type="text"],
 input[type="number"],
 select,
@@ -202,9 +188,7 @@ textarea:focus {
     box-shadow: 0 0 8px rgba(106, 122, 255, 0.2);
 }
 
-/* ============================================================
-   СПИСОК БОЁВ
-   ============================================================ */
+/* СПИСОК БОЁВ */
 .battle-setup {
     display: flex;
     gap: 12px;
@@ -248,9 +232,6 @@ textarea:focus {
     font-size: 0.85em;
 }
 
-/* ============================================================
-   ПЛЕЙСХОЛДЕРЫ
-   ============================================================ */
 .empty-state {
     color: var(--text-dim);
     text-align: center;
@@ -258,9 +239,287 @@ textarea:focus {
     font-style: italic;
 }
 
-/* ============================================================
-   АДАПТАЦИЯ
-   ============================================================ */
+/* ТИП УРОНА */
+.damage-type-block {
+    background: var(--bg-dark);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin-bottom: 10px;
+}
+
+.damage-type-label {
+    font-size: 0.75em;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+}
+
+.damage-type-options {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+}
+
+.damage-option {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 10px 6px;
+    background: var(--bg-elevated);
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+    user-select: none;
+}
+
+.damage-option input[type="radio"] {
+    display: none;
+}
+
+.damage-option .damage-icon {
+    font-size: 1.4em;
+    line-height: 1;
+}
+
+.damage-option .damage-name {
+    font-size: 0.85em;
+    font-weight: 600;
+    color: var(--text-light);
+}
+
+.damage-option .damage-mark {
+    font-size: 0.7em;
+    font-family: var(--font-mono);
+    color: var(--text-dim);
+}
+
+.damage-option:hover {
+    border-color: var(--accent-glow);
+}
+
+.damage-option.selected {
+    border-color: var(--accent-glow);
+    background: rgba(106, 122, 255, 0.1);
+    box-shadow: 0 0 12px rgba(106, 122, 255, 0.3);
+}
+
+.damage-option.selected .damage-name {
+    color: var(--accent-glow);
+}
+
+.damage-option.damage-bashing.selected {
+    border-color: #7a7a7a;
+    background: rgba(160, 160, 160, 0.1);
+    box-shadow: 0 0 12px rgba(160, 160, 160, 0.3);
+}
+
+.damage-option.damage-bashing.selected .damage-name {
+    color: #c0c0c0;
+}
+
+.damage-option.damage-lethal.selected {
+    border-color: var(--danger);
+    background: rgba(204, 68, 68, 0.1);
+    box-shadow: 0 0 12px rgba(204, 68, 68, 0.3);
+}
+
+.damage-option.damage-lethal.selected .damage-name {
+    color: var(--danger);
+}
+
+.damage-option.damage-aggravated.selected {
+    border-color: var(--accent-purple);
+    background: rgba(138, 90, 170, 0.15);
+    box-shadow: 0 0 15px rgba(138, 90, 170, 0.4);
+}
+
+.damage-option.damage-aggravated.selected .damage-name {
+    color: var(--accent-purple);
+}
+
+/* ЗДОРОВЬЕ */
+.health-bar {
+    display: flex;
+    gap: 2px;
+    margin-top: 6px;
+    flex-wrap: wrap;
+}
+
+.health-box {
+    width: 16px;
+    height: 16px;
+    border: 1px solid var(--border-color);
+    border-radius: 2px;
+    background: var(--bg-dark);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: bold;
+    font-family: var(--font-mono);
+    line-height: 1;
+    cursor: pointer;
+    transition: all 0.15s;
+    position: relative;
+}
+
+.health-box:hover {
+    transform: scale(1.15);
+}
+
+.health-box.bashing {
+    background: #3a3a3a;
+    color: #c0c0c0;
+}
+
+.health-box.lethal {
+    background: #4a1a1a;
+    color: #ff6666;
+}
+
+.health-box.aggravated {
+    background: #3a1a4a;
+    color: #cc66ff;
+    border-color: #8a5aaa;
+}
+
+/* УСЛОВИЯ */
+.conditions-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 4px;
+}
+
+.condition-badge {
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 8px;
+    background: rgba(204, 68, 68, 0.2);
+    color: var(--danger);
+    border: 1px solid rgba(204, 68, 68, 0.4);
+    cursor: pointer;
+}
+
+.condition-badge:hover {
+    background: rgba(204, 68, 68, 0.4);
+}
+
+/* МОДАЛЬНОЕ ОКНО */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.75);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    padding: 20px;
+    overflow-y: auto;
+}
+
+.modal-window {
+    background: var(--bg-card);
+    border: 1px solid var(--accent-glow);
+    border-radius: 12px;
+    padding: 24px;
+    max-width: 720px;
+    width: 100%;
+    max-height: 92vh;
+    overflow-y: auto;
+    box-shadow: 0 0 40px rgba(106, 122, 255, 0.3);
+}
+
+.modal-window h2 {
+    color: var(--accent-glow);
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.modal-section {
+    margin-bottom: 18px;
+}
+
+.modal-section h4 {
+    color: var(--accent-cyan);
+    font-size: 0.9em;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.modal-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+    gap: 10px;
+}
+
+.modal-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.modal-field label {
+    font-size: 0.75em;
+    color: var(--text-dim);
+    text-transform: uppercase;
+}
+
+.modal-field input,
+.modal-field select {
+    padding: 6px 8px;
+    font-size: 0.9em;
+}
+
+.modal-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border-color);
+}
+
+.modal-actions button {
+    flex: 1;
+    padding: 10px;
+}
+
+.arcana-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 6px;
+}
+
+.arcana-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.85em;
+}
+
+.arcana-item label {
+    flex: 1;
+    color: var(--text-light);
+}
+
+.arcana-item input {
+    width: 50px;
+    padding: 4px;
+    text-align: center;
+}
+
+/* АДАПТАЦИЯ */
 @media (max-width: 640px) {
     body {
         padding: 10px;
@@ -274,5 +533,25 @@ textarea:focus {
         font-size: 0.8em;
         padding: 8px 10px;
         min-width: 70px;
+    }
+
+    .modal-window {
+        padding: 16px;
+    }
+
+    .modal-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .arcana-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .damage-type-options {
+        gap: 6px;
+    }
+
+    .damage-option {
+        padding: 8px 4px;
     }
 }
