@@ -1,11 +1,23 @@
-// Import the functions you need from the SDKs you need
-import { initializeApp } from "firebase/app";
-import { getAnalytics } from "firebase/analytics";
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
+// js/firebase-config.js
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import {
+    getFirestore,
+    collection,
+    addDoc,
+    onSnapshot,
+    query,
+    where,
+    doc,
+    updateDoc,
+    deleteDoc,
+    serverTimestamp,
+    getDoc,
+    arrayUnion,
+    arrayRemove
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-// Your web app's Firebase configuration
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+// ВАШ НОВЫЙ КОНФИГ ИЗ FIREBASE CONSOLE
 const firebaseConfig = {
     apiKey: "AIzaSyACzC08unGG21vit37CNKSacyAR9_wOPu8",
     authDomain: "mage-awakening-tracker.firebaseapp.com",
@@ -16,6 +28,26 @@ const firebaseConfig = {
     measurementId: "G-L1YM4J2HSQ"
 };
 
-// Initialize Firebase
 const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
+const db = getFirestore(app);
+const auth = getAuth(app);
+
+// Анонимная авторизация для доступа к Firestore
+signInAnonymously(auth).catch((err) => console.warn("Ошибка авторизации:", err));
+
+export {
+    db,
+    auth,
+    collection,
+    addDoc,
+    onSnapshot,
+    query,
+    where,
+    doc,
+    updateDoc,
+    deleteDoc,
+    serverTimestamp,
+    getDoc,
+    arrayUnion,
+    arrayRemove
+};
