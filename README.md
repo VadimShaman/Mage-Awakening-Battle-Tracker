@@ -32,7 +32,7 @@
 
 ```bash
 
-git clone https://github.com/ваш-логин/mage-awakening-tracker.git
+git clone [https://github.com/ваш-логин/mage-awakening-tracker.git](https://github.com/VadimShaman/Mage-Awakening-Battle-Tracker.git)
 
 cd mage-awakening-tracker
 
