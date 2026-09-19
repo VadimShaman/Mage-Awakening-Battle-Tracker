@@ -1,0 +1,38 @@
+mage-awakening-tracker/
+│
+├── index.html                      # Главная страница (хаб, список боёв)
+├── battle.html                     # Боевая комната (трекер)
+├── spell-helper.html               # Калькулятор заклинаний (из вашего index.html)
+│
+├── css/
+│   ├── style.css                   # Основные стили (тёмная тема, мистика)
+│   └── spell-helper.css            # Стили калькулятора заклинаний
+│
+├── js/
+│   ├── firebase-config.js          # Конфигурация Firebase
+│   ├── main.js                     # Логика главной страницы (список боёв)
+│   ├── spell-helper.js             # Логика калькулятора заклинаний
+│   │
+│   ├── battle/
+│   │   ├── battle-init.js          # Инициализация боевой комнаты
+│   │   ├── battle-core.js          # Ядро: создание боя, инициатива, персонажи
+│   │   ├── battle-dice.js          # ⭐ НОВОЕ: пул d10, взрывы, успехи
+│   │   ├── battle-attack.js        # Атака (переписана под d10)
+│   │   ├── battle-magic.js         # ⭐ НОВОЕ: логика заклинаний
+│   │   ├── battle-status.js        # Урон, здоровье, состояния, реакции
+│   │   ├── battle-log.js           # Логи боя
+│   │   └── battle-ui.js            # Вспомогательные функции UI
+│   │
+│   └── data/
+│       ├── paths.js                # ⭐ НОВОЕ: данные Путей (Акантус, Морос...)
+│       ├── arcana.js               # ⭐ НОВОЕ: данные Таинств
+│       └── npc-templates.js        # ⭐ НОВОЕ: шаблоны NPC (Спящие, маги, твари)
+│
+├── assets/
+│   ├── icons/                      # Иконки Таинств, Путей, состояний
+│   └── images/                     # Фоны, арты
+│
+├── package.json
+├── package-lock.json
+├── README.md
+└── .gitignore

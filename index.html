@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mage: The Awakening — Хаб</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script>
+        window.VITE_FIREBASE_API_KEY = "ВАШ_API_KEY";
+        window.VITE_FIREBASE_AUTH_DOMAIN = "ВАШ_PROJECT.firebaseapp.com";
+        window.VITE_FIREBASE_PROJECT_ID = "mage-tracker";
+        window.VITE_FIREBASE_STORAGE_BUCKET = "mage-tracker.appspot.com";
+        window.VITE_FIREBASE_MESSAGING_SENDER_ID = "000000000000";
+        window.VITE_FIREBASE_APP_ID = "1:000000000000:web:xxxxxxxxxxxx";
+    </script>
+</head>
+
+<body class="dark-bg">
+
+    <div class="container">
+        <header>
+            <h1>🧙 Mage: The Awakening</h1>
+            <p class="subtitle">Боевой трекер для Хроник Тьмы</p>
+        </header>
+
+        <div class="tabs-container">
+            <button class="tab-btn active" onclick="openTab(event, 'tracker-tab')">⚔️ Трекер боя</button>
+            <button class="tab-btn" onclick="openTab(event, 'spell-tab')">🔮 Заклинания</button>
+            <button class="tab-btn" onclick="openTab(event, 'guide-tab')">📜 Гайд</button>
+        </div>
+
+        <!-- ВКЛАДКА: ТРЕКЕР -->
+        <div id="tracker-tab" class="tab-content active">
+            <h2>Активные сражения</h2>
+            <div class="battle-setup">
+                <input type="text" id="battle-name-input" placeholder="Название боя (например, «Осада Атенеума»)">
+                <button id="btn-create-battle" class="btn-primary">Создать бой</button>
+            </div>
+            <div id="active-battles-list"></div>
+        </div>
+
+        <!-- ВКЛАДКА: ЗАКЛИНАНИЯ (встроенный калькулятор) -->
+        <div id="spell-tab" class="tab-content">
+            <h2>Калькулятор заклинаний</h2>
+            <p>Открой <a href="spell-helper.html" target="_blank">полный калькулятор</a></p>
+        </div>
+
+        <!-- ВКЛАДКА: ГАЙД -->
+        <div id="guide-tab" class="tab-content">
+            <h2>Гайд по механике</h2>
+            <p>Здесь будет справочник по Хроникам Тьмы.</p>
+        </div>
+    </div>
+
+    <script type="module" src="js/main.js"></script>
+    <script>
+        function openTab(evt, tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById(tabId).style.display = 'block';
+            evt.currentTarget.classList.add('active');
+        }
+    </script>
+</body>
+
+</html>
