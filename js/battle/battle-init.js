@@ -8,6 +8,7 @@ import { openCharacterEditor, openCharacterCreator } from './battle-editor.js';
 import { performAttack, resolveDamage, calculateAttackPool } from './battle-attack.js';
 import { performDodge, getWoundPenalty, applyDamage, healDamage } from './battle-status.js';
 import { castSpell, ARCANUM_LIST, PRACTICES } from './battle-magic.js';
+import { NPC_TEMPLATES, NPC_CATEGORIES, getTemplatesByCategory } from '../data/npc-templates.js';
 
 // ============================================================
 // 1. СОСТОЯНИЕ
@@ -168,7 +169,7 @@ function updateCombatants(data) {
         });
     });
 
-    // Обработчики: удаление (с оптимистичным UI)
+    // Обработчики: удаление
     combatantsList.querySelectorAll('.delete-char-btn').forEach(btn => {
         btn.addEventListener('click', async (e) => {
             e.stopPropagation();
@@ -178,7 +179,6 @@ function updateCombatants(data) {
 
             if (!confirm(`🗑️ Удалить персонажа "${char.name}"?\nЭто действие необратимо.`)) return;
 
-            // ⚡ Оптимистично убираем карточку из DOM сразу
             const card = btn.closest('.combatant-card');
             if (card) {
                 card.style.transition = 'opacity 0.2s';
@@ -191,13 +191,12 @@ function updateCombatants(data) {
             } catch (err) {
                 console.error(err);
                 alert('Ошибка удаления: ' + err.message);
-                // При ошибке — перерисовать список
                 if (state.battleData) updateCombatants(state.battleData);
             }
         });
     });
 
-    // Обработчики: клик по клетке здоровья (цикл: пусто → / → X → * → пусто)
+    // Обработчики: клик по клетке здоровья
     combatantsList.querySelectorAll('.health-box').forEach(box => {
         box.addEventListener('click', async (e) => {
             e.stopPropagation();
@@ -212,7 +211,7 @@ function updateCombatants(data) {
         });
     });
 
-    // Обработчики: клик по состоянию (удалить)
+    // Обработчики: клик по состоянию
     combatantsList.querySelectorAll('.condition-badge').forEach(badge => {
         badge.addEventListener('click', async (e) => {
             e.stopPropagation();
@@ -313,11 +312,9 @@ async function deleteCharacter(battleId, charId, charName) {
     const char = data.characters?.[charId];
     if (!char) return;
 
-    // 1. Убираем из turnOrder
     const oldOrder = data.turnOrder || [];
     const turnOrder = oldOrder.filter(t => t.id !== charId);
 
-    // 2. Корректируем currentTurnIndex
     let currentTurnIndex = data.currentTurnIndex || 0;
     const removedIndex = oldOrder.findIndex(t => t.id === charId);
 
@@ -337,11 +334,9 @@ async function deleteCharacter(battleId, charId, charName) {
         currentTurnIndex = 0;
     }
 
-    // 3. Считаем убийства
     const wasAlive = char.status !== 'dead' && char.isActive !== false;
     const newKills = wasAlive ? (data.kills || 0) + 1 : (data.kills || 0);
 
-    // 4. Обновляем Firestore с deleteField()
     const updates = {
         [`characters.${charId}`]: deleteField(),
         turnOrder: turnOrder,
@@ -350,8 +345,6 @@ async function deleteCharacter(battleId, charId, charName) {
     };
 
     await updateDoc(battleRefLocal, updates);
-
-    // 5. Лог
     addLogEntry(`🗑️ ${charName} удалён из боя`, 'system');
 }
 
@@ -410,6 +403,8 @@ updateDamageTypeSelection();
 // ============================================================
 // 8. ДОБАВЛЕНИЕ ПЕРСОНАЖЕЙ
 // ============================================================
+
+// --- "Игрок" — пустой маг-редактор (без шаблона) ---
 $('add-player-btn')?.addEventListener('click', () => {
     openCharacterEditor(state.battleId, null, {
         name: 'Маг', role: 'Игрок', isNPC: false, path: '',
@@ -426,41 +421,147 @@ $('add-player-btn')?.addEventListener('click', () => {
     });
 });
 
-$('add-ally-btn')?.addEventListener('click', () => {
-    openCharacterEditor(state.battleId, null, {
-        name: 'Союзник', role: 'Союзник', isNPC: true,
-        intelligence: 2, wits: 2, resolve: 2,
-        strength: 2, dexterity: 2, stamina: 2,
-        presence: 2, manipulation: 2, composure: 2,
-        brawl: 1, athletics: 1,
-        health: 7, maxHealth: 7
-    });
-});
+// --- Остальные — открывают селектор шаблонов ---
+$('add-ally-btn')?.addEventListener('click', () => openTemplateSelector('Союзник'));
+$('add-enemy-btn')?.addEventListener('click', () => openTemplateSelector('Враг'));
+$('add-npc-btn')?.addEventListener('click', () => openTemplateSelector('NPC'));
 
-$('add-enemy-btn')?.addEventListener('click', () => {
-    openCharacterEditor(state.battleId, null, {
-        name: 'Враг', role: 'Враг', isNPC: true,
-        intelligence: 2, wits: 2, resolve: 2,
-        strength: 2, dexterity: 2, stamina: 2,
-        presence: 2, manipulation: 2, composure: 2,
-        brawl: 1, athletics: 1,
-        health: 7, maxHealth: 7
-    });
-});
-
-$('add-npc-btn')?.addEventListener('click', () => {
-    openCharacterEditor(state.battleId, null, {
-        name: 'NPC', role: 'NPC', isNPC: true,
-        intelligence: 2, wits: 2, resolve: 2,
-        strength: 2, dexterity: 2, stamina: 2,
-        presence: 2, manipulation: 2, composure: 2,
-        brawl: 1, athletics: 1,
-        health: 7, maxHealth: 7
-    });
-});
 $('create-custom-char-btn')?.addEventListener('click', () => {
     openCharacterCreator(state.battleId);
 });
+
+// ============================================================
+// 8.1. СЕЛЕКТОР ШАБЛОНОВ NPC
+// ============================================================
+function openTemplateSelector(role) {
+    const modalRoot = $('character-editor-modal');
+    if (!modalRoot) return;
+
+    // Строим категории с шаблонами
+    let categoriesHtml = '';
+    for (const cat of NPC_CATEGORIES) {
+        const templates = getTemplatesByCategory(cat.key);
+        if (templates.length === 0) continue;
+
+        categoriesHtml += `
+            <div class="template-category">
+                <div class="template-category-title">${cat.icon} ${cat.name}</div>
+                <div class="template-grid">
+                    ${templates.map(t => `
+                        <div class="template-card" data-template="${t.key}">
+                            <div class="template-icon">${t.icon || cat.icon}</div>
+                            <div class="template-name">${t.name}</div>
+                            <div class="template-desc">${t.description || ''}</div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+    }
+
+    modalRoot.innerHTML = `
+        <div class="modal-overlay" id="template-overlay">
+            <div class="modal-window template-selector-window">
+                <h2>📋 Выбор шаблона — ${role}</h2>
+                <p style="color:var(--text-dim); margin-bottom:16px;">
+                    Выберите готовый шаблон. После выбора откроется редактор — там можно всё подправить.
+                </p>
+                <div class="template-scroll">
+                    ${categoriesHtml}
+                </div>
+                <div class="modal-actions">
+                    <button class="btn-danger" id="template-cancel">❌ Отмена</button>
+                </div>
+            </div>
+        </div>
+    `;
+
+    const overlay = modalRoot.querySelector('#template-overlay');
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) modalRoot.innerHTML = '';
+    });
+    modalRoot.querySelector('#template-cancel').addEventListener('click', () => modalRoot.innerHTML = '');
+
+    // Клик по шаблону
+    modalRoot.querySelectorAll('.template-card').forEach(card => {
+        card.addEventListener('click', () => {
+            const templateKey = card.dataset.template;
+            const template = NPC_TEMPLATES[templateKey];
+            if (!template) return;
+            modalRoot.innerHTML = '';
+            pickTemplate(templateKey, role);
+        });
+    });
+}
+
+/**
+ * Открывает редактор персонажа с данными шаблона.
+ * Поле role переопределяется в зависимости от кнопки.
+ */
+function pickTemplate(templateKey, role) {
+    const template = NPC_TEMPLATES[templateKey];
+    if (!template) return;
+
+    // Клонируем, чтобы не мутировать оригинал
+    const charData = JSON.parse(JSON.stringify(template));
+
+    // Переопределяем роль и признак NPC
+    charData.role = role;
+    charData.isNPC = role !== 'Игрок';
+
+    // Достаём базовые поля, которые ждёт редактор
+    const editorData = {
+        name: charData.name || 'Безымянный',
+        role: role,
+        isNPC: charData.isNPC,
+        path: charData.path || '',
+        gnosis: charData.gnosis || 0,
+        mana: charData.mana || 0,
+        maxMana: charData.maxMana || 0,
+        wisdom: charData.wisdom || 7,
+        // Характеристики
+        intelligence: charData.intelligence ?? 2,
+        wits: charData.wits ?? 2,
+        resolve: charData.resolve ?? 2,
+        strength: charData.strength ?? 2,
+        dexterity: charData.dexterity ?? 2,
+        stamina: charData.stamina ?? 2,
+        presence: charData.presence ?? 2,
+        manipulation: charData.manipulation ?? 2,
+        composure: charData.composure ?? 2,
+        // Навыки
+        brawl: charData.brawl ?? 0,
+        firearms: charData.firearms ?? 0,
+        athletics: charData.athletics ?? 0,
+        occult: charData.occult ?? 0,
+        investigation: charData.investigation ?? 0,
+        // Производные
+        health: charData.health ?? 7,
+        maxHealth: charData.maxHealth ?? 7,
+        willpower: charData.willpower ?? 4,
+        maxWillpower: charData.maxWillpower ?? 4,
+        defense: charData.defense ?? 2,
+        speed: charData.speed ?? 9,
+        initiative: charData.initiative ?? 4,
+        arcana: charData.arcana || {},
+        // Особые поля (для духов/вампиров/и т.д.)
+        rank: charData.rank,
+        power: charData.power,
+        finesse: charData.finesse,
+        resistance: charData.resistance,
+        essence: charData.essence,
+        maxEssence: charData.maxEssence,
+        corpus: charData.corpus,
+        maxCorpus: charData.maxCorpus,
+        influence: charData.influence,
+        numina: charData.numina,
+        anchors: charData.anchors,
+        conditions: charData.conditions || [],
+        type: charData.type
+    };
+
+    openCharacterEditor(state.battleId, null, editorData);
+}
 
 // ============================================================
 // 9. ИНИЦИАТИВА — АВТО
