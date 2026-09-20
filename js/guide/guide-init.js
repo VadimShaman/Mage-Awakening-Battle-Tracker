@@ -1,0 +1,192 @@
+// js/guide/guide-init.js
+// ============================================================
+// ИНИЦИАЛИЗАЦИЯ СПРАВОЧНИКА
+// ============================================================
+import { GUIDE_SECTIONS } from './guide-sections.js';
+
+const sidebarEl = document.getElementById('guide-sidebar');
+const contentEl = document.getElementById('guide-content');
+const searchInput = document.getElementById('guide-search');
+const searchClear = document.getElementById('guide-search-clear');
+
+// ============================================================
+// 1. ПОСТРОЕНИЕ НАВИГАЦИИ
+// ============================================================
+function buildNavigation() {
+    let html = '';
+    for (const group of GUIDE_SECTIONS) {
+        html += `<div class="guide-nav-group">`;
+        html += `<div class="guide-nav-group-title">${group.title}</div>`;
+        for (const item of group.items) {
+            html += `<button class="guide-nav-item" data-section="${item.id}">${item.title}</button>`;
+        }
+        html += `</div>`;
+    }
+    sidebarEl.innerHTML = html;
+
+    // Обработчики
+    sidebarEl.querySelectorAll('.guide-nav-item').forEach(btn => {
+        btn.addEventListener('click', () => {
+            showSection(btn.dataset.section);
+        });
+    });
+}
+
+// ============================================================
+// 2. ПОСТРОЕНИЕ КОНТЕНТА (все разделы сразу, скрываем через CSS)
+// ============================================================
+function buildContent() {
+    let html = '';
+    for (const group of GUIDE_SECTIONS) {
+        for (const item of group.items) {
+            html += `<div class="guide-panel" id="panel-${item.id}">${item.content}</div>`;
+        }
+    }
+    contentEl.innerHTML = html;
+}
+
+// ============================================================
+// 3. ПОКАЗ РАЗДЕЛА
+// ============================================================
+function showSection(sectionId) {
+    // Панели
+    document.querySelectorAll('.guide-panel').forEach(p => p.classList.remove('active'));
+    const panel = document.getElementById(`panel-${sectionId}`);
+    if (panel) panel.classList.add('active');
+
+    // Кнопки
+    document.querySelectorAll('.guide-nav-item').forEach(b => b.classList.remove('active'));
+    const btn = sidebarEl.querySelector(`[data-section="${sectionId}"]`);
+    if (btn) btn.classList.add('active');
+
+    // Обновляем hash (для закладок)
+    if (window.location.hash !== `#${sectionId}`) {
+        history.replaceState(null, '', `#${sectionId}`);
+    }
+
+    // Скролл наверх контента
+    contentEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// ============================================================
+// 4. ПОИСК
+// ============================================================
+let originalContents = {};
+
+function cacheOriginalContents() {
+    // Запоминаем исходный HTML каждой панели
+    document.querySelectorAll('.guide-panel').forEach(panel => {
+        originalContents[panel.id] = panel.innerHTML;
+    });
+}
+
+function performSearch(query) {
+    const q = query.trim().toLowerCase();
+
+    if (!q) {
+        // Восстанавливаем всё
+        document.querySelectorAll('.guide-panel').forEach(panel => {
+            if (originalContents[panel.id]) {
+                panel.innerHTML = originalContents[panel.id];
+            }
+        });
+        searchClear.style.display = 'none';
+        return;
+    }
+
+    searchClear.style.display = 'inline-block';
+    let firstMatchId = null;
+
+    document.querySelectorAll('.guide-panel').forEach(panel => {
+        // Восстанавливаем оригинал перед новым поиском
+        panel.innerHTML = originalContents[panel.id];
+
+        const text = panel.textContent.toLowerCase();
+        if (text.includes(q)) {
+            // Подсвечиваем все вхождения через walker
+            highlightText(panel, q);
+            panel.classList.add('active');
+            if (!firstMatchId) firstMatchId = panel.id;
+        } else {
+            panel.classList.remove('active');
+        }
+    });
+
+    // Если есть совпадение — показать первый раздел
+    if (firstMatchId) {
+        const sectionId = firstMatchId.replace('panel-', '');
+        document.querySelectorAll('.guide-nav-item').forEach(b => b.classList.remove('active'));
+        const btn = sidebarEl.querySelector(`[data-section="${sectionId}"]`);
+        if (btn) btn.classList.add('active');
+    }
+}
+
+function highlightText(root, query) {
+    // Простой обход текстовых нод
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+        acceptNode: (node) => {
+            if (node.parentElement.tagName === 'SCRIPT' || node.parentElement.tagName === 'STYLE') {
+                return NodeFilter.FILTER_REJECT;
+            }
+            return node.nodeValue.toLowerCase().includes(query)
+                ? NodeFilter.FILTER_ACCEPT
+                : NodeFilter.FILTER_REJECT;
+        }
+    });
+
+    const nodes = [];
+    while (walker.nextNode()) nodes.push(walker.currentNode);
+
+    nodes.forEach(node => {
+        const text = node.nodeValue;
+        const lower = text.toLowerCase();
+        const frag = document.createDocumentFragment();
+        let lastIdx = 0;
+        let idx = lower.indexOf(query);
+
+        while (idx !== -1) {
+            if (idx > lastIdx) {
+                frag.appendChild(document.createTextNode(text.slice(lastIdx, idx)));
+            }
+            const mark = document.createElement('mark');
+            mark.className = 'guide-search-mark';
+            mark.textContent = text.slice(idx, idx + query.length);
+            frag.appendChild(mark);
+            lastIdx = idx + query.length;
+            idx = lower.indexOf(query, lastIdx);
+        }
+        if (lastIdx < text.length) {
+            frag.appendChild(document.createTextNode(text.slice(lastIdx)));
+        }
+        node.parentNode.replaceChild(frag, node);
+    });
+}
+
+if (searchInput) {
+    let searchTimeout;
+    searchInput.addEventListener('input', () => {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+            performSearch(searchInput.value);
+        }, 250);
+    });
+}
+
+if (searchClear) {
+    searchClear.addEventListener('click', () => {
+        searchInput.value = '';
+        performSearch('');
+        searchInput.focus();
+    });
+}
+
+// ============================================================
+// 5. СТАРТ
+// ============================================================
+buildNavigation();
+buildContent();
+cacheOriginalContents();
+
+// Открыть раздел из hash, или первый по умолчанию
+const initialId = window.location.hash.replace('#', '') || GUIDE_SECTIONS[0].items[0].id;
+showSection(initialId);
