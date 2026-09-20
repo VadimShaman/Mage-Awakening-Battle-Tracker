@@ -2,7 +2,7 @@
 // ============================================================
 // БОЕВАЯ КОМНАТА — MAGE: THE AWAKENING 2E (ПОЛНАЯ)
 // ============================================================
-import { db, doc, onSnapshot, updateDoc, serverTimestamp, arrayUnion, getDoc } from '../firebase-config.js';
+import { db, doc, onSnapshot, updateDoc, serverTimestamp, arrayUnion, getDoc, deleteField } from '../firebase-config.js';
 import { rollDicePool, formatDiceResult } from './battle-dice.js';
 import { openCharacterEditor, openCharacterCreator } from './battle-editor.js';
 import { performAttack, resolveDamage, calculateAttackPool } from './battle-attack.js';
@@ -168,7 +168,7 @@ function updateCombatants(data) {
         });
     });
 
-    // Обработчики: удаление
+    // Обработчики: удаление (с оптимистичным UI)
     combatantsList.querySelectorAll('.delete-char-btn').forEach(btn => {
         btn.addEventListener('click', async (e) => {
             e.stopPropagation();
@@ -178,11 +178,21 @@ function updateCombatants(data) {
 
             if (!confirm(`🗑️ Удалить персонажа "${char.name}"?\nЭто действие необратимо.`)) return;
 
+            // ⚡ Оптимистично убираем карточку из DOM сразу
+            const card = btn.closest('.combatant-card');
+            if (card) {
+                card.style.transition = 'opacity 0.2s';
+                card.style.opacity = '0';
+                setTimeout(() => card.remove(), 200);
+            }
+
             try {
                 await deleteCharacter(state.battleId, charId, char.name);
             } catch (err) {
                 console.error(err);
                 alert('Ошибка удаления: ' + err.message);
+                // При ошибке — перерисовать список
+                if (state.battleData) updateCombatants(state.battleData);
             }
         });
     });
@@ -223,11 +233,9 @@ async function cycleHealthBox(charId, char, idx) {
     let health = char.health ?? maxHp;
     let damageTypes = (char.damageTypes || new Array(maxHp).fill(null)).slice();
 
-    // Синхронизируем длину массива
     while (damageTypes.length < maxHp) damageTypes.push(null);
 
     const current = damageTypes[idx];
-    // Цикл: null → bashing → lethal → aggravated → null
     let next = null;
     let newHealth = health;
 
@@ -252,7 +260,6 @@ async function cycleHealthBox(charId, char, idx) {
         newHealth = lastDamage + 1;
     }
 
-    // Пересчёт health: количество целых клеток = индекс первой повреждённой
     let firstDamage = maxHp;
     for (let i = 0; i < maxHp; i++) {
         if (damageTypes[i]) { firstDamage = i; break; }
@@ -330,13 +337,13 @@ async function deleteCharacter(battleId, charId, charName) {
         currentTurnIndex = 0;
     }
 
-    // 3. Считаем убийства, если удалили живого
+    // 3. Считаем убийства
     const wasAlive = char.status !== 'dead' && char.isActive !== false;
     const newKills = wasAlive ? (data.kills || 0) + 1 : (data.kills || 0);
 
-    // 4. Обновляем Firestore
+    // 4. Обновляем Firestore с deleteField()
     const updates = {
-        [`characters.${charId}`]: null,
+        [`characters.${charId}`]: deleteField(),
         turnOrder: turnOrder,
         currentTurnIndex: currentTurnIndex,
         kills: newKills
@@ -663,8 +670,8 @@ function showAttackResult(result, damageType) {
             <div>🎯 Пул: ${result.pool} кубов (Защита ${result.defense} вычтена)</div>
             <div>🎲 Бросок: ${formatDiceResult(result)}</div>
             ${result.damage > 0
-                ? `<div style="color:var(--danger); font-weight:bold;">💥 Урон: ${result.damage}</div>`
-                : '<div style="color:var(--text-dim);">Промах</div>'}
+            ? `<div style="color:var(--danger); font-weight:bold;">💥 Урон: ${result.damage}</div>`
+            : '<div style="color:var(--text-dim);">Промах</div>'}
             ${result.isDramaticFailure ? '<div style="color:var(--danger);">💀 Драматический провал!</div>' : ''}
         </div>`;
 }
