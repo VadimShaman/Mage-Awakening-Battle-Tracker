@@ -1,4 +1,8 @@
 /* css/style.css */
+/* ============================================================
+   MAGE: THE AWAKENING — ОБЩИЕ СТИЛИ
+   ============================================================ */
+
 :root {
     --bg-dark: #0d0d12;
     --bg-card: #16161f;
@@ -411,6 +415,70 @@ textarea:focus {
     background: rgba(204, 68, 68, 0.4);
 }
 
+/* КНОПКИ РЕДАКТИРОВАНИЯ И УДАЛЕНИЯ */
+.combatant-card {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+}
+
+.combatant-card:hover {
+    border-color: var(--accent-glow);
+}
+
+.combatant-card.active-turn {
+    border-left: 4px solid var(--accent-glow);
+    background: rgba(106, 122, 255, 0.08);
+}
+
+.combatant-card.dead {
+    opacity: 0.4;
+    text-decoration: line-through;
+}
+
+.combatant-card .edit-char-btn {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    background: transparent;
+    border: none;
+    color: var(--text-dim);
+    font-size: 1em;
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+
+.combatant-card .edit-char-btn:hover {
+    background: rgba(106, 122, 255, 0.2);
+    color: var(--accent-glow);
+}
+
+.combatant-card .delete-char-btn {
+    position: absolute;
+    top: 6px;
+    right: 36px;
+    background: transparent;
+    border: none;
+    color: var(--text-dim);
+    font-size: 1em;
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+
+.combatant-card .delete-char-btn:hover {
+    background: rgba(204, 68, 68, 0.2);
+    color: var(--danger);
+}
+
 /* МОДАЛЬНОЕ ОКНО */
 .modal-overlay {
     position: fixed;
@@ -517,6 +585,74 @@ textarea:focus {
     width: 50px;
     padding: 4px;
     text-align: center;
+}
+
+/* ЛОГ */
+.log-viewport {
+    height: 300px;
+    overflow-y: auto;
+    background: #080810;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 10px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+}
+
+.log-entry {
+    padding: 4px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.log-entry .time {
+    color: #554455;
+    margin-right: 10px;
+}
+
+.log-entry.damage {
+    color: var(--danger);
+}
+
+.log-entry.system {
+    color: var(--accent-cyan);
+}
+
+.log-entry.magic {
+    color: var(--accent-purple);
+}
+
+.stat-badge {
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    background: var(--bg-dark);
+    color: var(--text-dim);
+    margin-left: 6px;
+}
+
+.stat-badge.alive {
+    background: #1a3a1a;
+    color: var(--success);
+}
+
+.stat-badge.critical {
+    background: #3a2a1a;
+    color: var(--warning);
+}
+
+.stat-badge.dead {
+    background: #3a1a1a;
+    color: var(--danger);
+}
+
+.dice-roll {
+    display: inline-block;
+    background: #1a1a2a;
+    padding: 2px 10px;
+    border-radius: 4px;
+    font-weight: bold;
+    color: var(--accent-glow);
+    margin: 0 4px;
 }
 
 /* АДАПТАЦИЯ */

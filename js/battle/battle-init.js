@@ -142,6 +142,7 @@ function updateCombatants(data) {
 
         html += `
             <div class="combatant-card ${isCurrent ? 'active-turn' : ''} ${isDead ? 'dead' : ''}">
+                <button class="delete-char-btn" data-delete-id="${id}" title="Удалить">🗑️</button>
                 <button class="edit-char-btn" data-edit-id="${id}" title="Редактировать">✏️</button>
                 <div class="name">${char.name || 'Безымянный'}</div>
                 <div class="meta">
@@ -164,6 +165,25 @@ function updateCombatants(data) {
             const charId = btn.dataset.editId;
             const char = data.characters[charId];
             if (char) openCharacterEditor(state.battleId, charId, char);
+        });
+    });
+
+    // Обработчики: удаление
+    combatantsList.querySelectorAll('.delete-char-btn').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            const charId = btn.dataset.deleteId;
+            const char = data.characters[charId];
+            if (!char) return;
+
+            if (!confirm(`🗑️ Удалить персонажа "${char.name}"?\nЭто действие необратимо.`)) return;
+
+            try {
+                await deleteCharacter(state.battleId, charId, char.name);
+            } catch (err) {
+                console.error(err);
+                alert('Ошибка удаления: ' + err.message);
+            }
         });
     });
 
@@ -213,8 +233,7 @@ async function cycleHealthBox(charId, char, idx) {
 
     if (current === null) {
         next = 'bashing';
-        newHealth = Math.min(health, idx); // всё от idx до конца становится повреждено
-        // Проставляем пустые клетки после idx
+        newHealth = Math.min(health, idx);
         for (let i = idx; i < maxHp; i++) {
             if (!damageTypes[i]) damageTypes[i] = 'bashing';
         }
@@ -225,9 +244,7 @@ async function cycleHealthBox(charId, char, idx) {
         next = 'aggravated';
         damageTypes[idx] = 'aggravated';
     } else if (current === 'aggravated') {
-        // Удаляем повреждение
         damageTypes[idx] = null;
-        // Если всё чисто после idx — пересчитываем health
         let lastDamage = -1;
         for (let i = maxHp - 1; i >= 0; i--) {
             if (damageTypes[i]) { lastDamage = i; break; }
@@ -242,10 +259,8 @@ async function cycleHealthBox(charId, char, idx) {
     }
     newHealth = firstDamage;
 
-    // Обрезка массива до maxHp
     damageTypes = damageTypes.slice(0, maxHp);
 
-    // Статус
     let status = 'alive';
     let isActive = true;
     if (newHealth <= -maxHp) {
@@ -280,7 +295,61 @@ async function removeConditionFromChar(charId, condName) {
 }
 
 // ============================================================
-// 5. ПОДПИСКА НА БОЙ
+// 5. УДАЛЕНИЕ ПЕРСОНАЖА
+// ============================================================
+async function deleteCharacter(battleId, charId, charName) {
+    const battleRefLocal = doc(db, 'battles', battleId);
+    const snap = await getDoc(battleRefLocal);
+    if (!snap.exists()) return;
+
+    const data = snap.data();
+    const char = data.characters?.[charId];
+    if (!char) return;
+
+    // 1. Убираем из turnOrder
+    const oldOrder = data.turnOrder || [];
+    const turnOrder = oldOrder.filter(t => t.id !== charId);
+
+    // 2. Корректируем currentTurnIndex
+    let currentTurnIndex = data.currentTurnIndex || 0;
+    const removedIndex = oldOrder.findIndex(t => t.id === charId);
+
+    if (removedIndex !== -1) {
+        if (removedIndex < currentTurnIndex) {
+            currentTurnIndex = Math.max(0, currentTurnIndex - 1);
+        } else if (removedIndex === currentTurnIndex) {
+            if (currentTurnIndex >= turnOrder.length) {
+                currentTurnIndex = 0;
+            }
+        }
+    }
+
+    if (turnOrder.length > 0) {
+        currentTurnIndex = Math.min(currentTurnIndex, turnOrder.length - 1);
+    } else {
+        currentTurnIndex = 0;
+    }
+
+    // 3. Считаем убийства, если удалили живого
+    const wasAlive = char.status !== 'dead' && char.isActive !== false;
+    const newKills = wasAlive ? (data.kills || 0) + 1 : (data.kills || 0);
+
+    // 4. Обновляем Firestore
+    const updates = {
+        [`characters.${charId}`]: null,
+        turnOrder: turnOrder,
+        currentTurnIndex: currentTurnIndex,
+        kills: newKills
+    };
+
+    await updateDoc(battleRefLocal, updates);
+
+    // 5. Лог
+    addLogEntry(`🗑️ ${charName} удалён из боя`, 'system');
+}
+
+// ============================================================
+// 6. ПОДПИСКА НА БОЙ
 // ============================================================
 state.unsubscribe = onSnapshot(battleRef, (snapshot) => {
     if (!snapshot.exists()) {
@@ -318,7 +387,7 @@ state.unsubscribe = onSnapshot(battleRef, (snapshot) => {
 });
 
 // ============================================================
-// 6. ВЫБОР ТИПА УРОНА
+// 7. ВЫБОР ТИПА УРОНА
 // ============================================================
 function updateDamageTypeSelection() {
     document.querySelectorAll('.damage-option').forEach(label => {
@@ -332,7 +401,7 @@ document.querySelectorAll('input[name="damage-type"]').forEach(input => {
 updateDamageTypeSelection();
 
 // ============================================================
-// 7. ДОБАВЛЕНИЕ ПЕРСОНАЖЕЙ
+// 8. ДОБАВЛЕНИЕ ПЕРСОНАЖЕЙ
 // ============================================================
 $('add-player-btn')?.addEventListener('click', () => {
     openCharacterEditor(state.battleId, null, {
@@ -379,7 +448,7 @@ $('create-custom-char-btn')?.addEventListener('click', () => {
 });
 
 // ============================================================
-// 8. ИНИЦИАТИВА — РУЧНАЯ
+// 9. ИНИЦИАТИВА — АВТО
 // ============================================================
 $('roll-init-btn')?.addEventListener('click', rollInitiativeForAll);
 
@@ -414,7 +483,7 @@ async function rollInitiativeForAll() {
 }
 
 // ============================================================
-// 9. ИНИЦИАТИВА — РУЧНОЙ ВВОД
+// 10. ИНИЦИАТИВА — РУЧНОЙ ВВОД
 // ============================================================
 $('manual-init-btn')?.addEventListener('click', () => {
     const data = state.battleData;
@@ -478,7 +547,7 @@ $('manual-init-btn')?.addEventListener('click', () => {
 });
 
 // ============================================================
-// 10. ПЕРЕХОД ХОДА
+// 11. ПЕРЕХОД ХОДА
 // ============================================================
 $('next-turn-btn')?.addEventListener('click', async () => {
     const data = state.battleData;
@@ -551,7 +620,7 @@ $('prev-round-btn')?.addEventListener('click', async () => {
 });
 
 // ============================================================
-// 11. АТАКА (с уклонением)
+// 12. АТАКА (с уклонением)
 // ============================================================
 $('attack-btn')?.addEventListener('click', async () => {
     const attackerId = $('attacker-select')?.value;
@@ -569,13 +638,11 @@ $('attack-btn')?.addEventListener('click', async () => {
             weaponName, weaponBonus, damageType, willpower
         });
 
-        // Промaх
         if (result.damage === 0) {
             showAttackResult(result, damageType);
             return;
         }
 
-        // Успех — предложить уклонение
         state.pendingAttack = result;
         showDodgePrompt(result, damageType);
     } catch (err) {
@@ -596,14 +663,14 @@ function showAttackResult(result, damageType) {
             <div>🎯 Пул: ${result.pool} кубов (Защита ${result.defense} вычтена)</div>
             <div>🎲 Бросок: ${formatDiceResult(result)}</div>
             ${result.damage > 0
-            ? `<div style="color:var(--danger); font-weight:bold;">💥 Урон: ${result.damage}</div>`
-            : '<div style="color:var(--text-dim);">Промах</div>'}
+                ? `<div style="color:var(--danger); font-weight:bold;">💥 Урон: ${result.damage}</div>`
+                : '<div style="color:var(--text-dim);">Промах</div>'}
             ${result.isDramaticFailure ? '<div style="color:var(--danger);">💀 Драматический провал!</div>' : ''}
         </div>`;
 }
 
 // ============================================================
-// 12. УКЛОНЕНИЕ (модальное окно)
+// 13. УКЛОНЕНИЕ (модальное окно)
 // ============================================================
 function showDodgePrompt(attackResult, damageType) {
     const defender = state.battleData.characters[attackResult.defenderId];
@@ -676,7 +743,7 @@ function showDodgePrompt(attackResult, damageType) {
 }
 
 // ============================================================
-// 13. МАГИЯ (модальное окно)
+// 14. МАГИЯ (модальное окно)
 // ============================================================
 $('cast-spell-btn')?.addEventListener('click', () => {
     const data = state.battleData;
@@ -871,7 +938,7 @@ $('cast-spell-btn')?.addEventListener('click', () => {
 });
 
 // ============================================================
-// 14. КУБЫ
+// 15. КУБЫ
 // ============================================================
 $('dice-custom-btn')?.addEventListener('click', () => {
     const expr = $('dice-custom-input').value.trim();
@@ -897,7 +964,7 @@ document.querySelectorAll('.dice-insert-btn').forEach(btn => {
 });
 
 // ============================================================
-// 15. ЗАМЕТКИ
+// 16. ЗАМЕТКИ
 // ============================================================
 const notesKey = `battle_${state.battleId}_notes`;
 const savedNotes = localStorage.getItem(notesKey);
@@ -908,7 +975,7 @@ $('save-notes-btn')?.addEventListener('click', () => {
 });
 
 // ============================================================
-// 16. КОНЕЦ БОЯ
+// 17. КОНЕЦ БОЯ
 // ============================================================
 $('end-battle-btn')?.addEventListener('click', async () => {
     if (!confirm('⛔ Завершить бой?')) return;
