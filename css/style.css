@@ -691,3 +691,62 @@ textarea:focus {
         padding: 8px 4px;
     }
 }
+
+/* ============================================================
+   КАТЕГОРИИ ХАРАКТЕРИСТИК
+   ============================================================ */
+.attr-section {
+    border-left: 3px solid var(--border-color);
+    padding-left: 12px;
+    margin-left: 4px;
+}
+
+.attr-section h4 {
+    margin-top: 4px;
+}
+
+.attr-section.attr-mental {
+    border-left-color: var(--accent-cyan);
+}
+
+.attr-section.attr-mental h4 {
+    color: var(--accent-cyan);
+}
+
+.attr-section.attr-physical {
+    border-left-color: var(--warning);
+}
+
+.attr-section.attr-physical h4 {
+    color: var(--warning);
+}
+
+.attr-section.attr-social {
+    border-left-color: var(--accent-purple);
+}
+
+.attr-section.attr-social h4 {
+    color: var(--accent-purple);
+}
+
+/* ⭐ Блок производных характеристик */
+.derived-section {
+    background: rgba(106, 122, 255, 0.05);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 12px;
+}
+
+.derived-section h4 {
+    color: var(--accent-cyan);
+    margin-bottom: 10px;
+}
+
+.derived-section input[readonly] {
+    font-weight: bold;
+    font-family: var(--font-mono);
+}
+
+.derived-section input[readonly]::before {
+    content: "⚙️ ";
+}

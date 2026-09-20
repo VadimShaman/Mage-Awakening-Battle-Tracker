@@ -413,39 +413,47 @@ updateDamageTypeSelection();
 $('add-player-btn')?.addEventListener('click', () => {
     openCharacterEditor(state.battleId, null, {
         name: 'Маг', role: 'Игрок', isNPC: false, path: '',
-        gnosis: 1, mana: 10, maxMana: 10,
+        gnosis: 1, mana: 10, maxMana: 11, wisdom: 7,
+        intelligence: 2, wits: 2, resolve: 2,
         strength: 2, dexterity: 2, stamina: 2,
-        wits: 2, resolve: 2, composure: 2,
-        presence: 2, manipulation: 2,
+        presence: 2, manipulation: 2, composure: 2,
         brawl: 1, firearms: 0, athletics: 1,
+        occult: 1, investigation: 1,
         health: 7, maxHealth: 7,
         willpower: 4, maxWillpower: 4,
+        defense: 2, speed: 9, initiative: 4,
         arcana: {}
     });
 });
+
 $('add-ally-btn')?.addEventListener('click', () => {
     openCharacterEditor(state.battleId, null, {
         name: 'Союзник', role: 'Союзник', isNPC: true,
+        intelligence: 2, wits: 2, resolve: 2,
         strength: 2, dexterity: 2, stamina: 2,
-        wits: 2, resolve: 2, composure: 2,
+        presence: 2, manipulation: 2, composure: 2,
         brawl: 1, athletics: 1,
         health: 7, maxHealth: 7
     });
 });
+
 $('add-enemy-btn')?.addEventListener('click', () => {
     openCharacterEditor(state.battleId, null, {
         name: 'Враг', role: 'Враг', isNPC: true,
+        intelligence: 2, wits: 2, resolve: 2,
         strength: 2, dexterity: 2, stamina: 2,
-        wits: 2, resolve: 2, composure: 2,
+        presence: 2, manipulation: 2, composure: 2,
         brawl: 1, athletics: 1,
         health: 7, maxHealth: 7
     });
 });
+
 $('add-npc-btn')?.addEventListener('click', () => {
     openCharacterEditor(state.battleId, null, {
         name: 'NPC', role: 'NPC', isNPC: true,
+        intelligence: 2, wits: 2, resolve: 2,
         strength: 2, dexterity: 2, stamina: 2,
-        wits: 2, resolve: 2, composure: 2,
+        presence: 2, manipulation: 2, composure: 2,
         brawl: 1, athletics: 1,
         health: 7, maxHealth: 7
     });
